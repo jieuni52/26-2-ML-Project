@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 
 # ---- Fill in your information (used in results.json) ----
-STUDENT_ID = "00000000"   # TODO: your student id, e.g. "20261234"
-STUDENT_NAME = "None"     # TODO: your name in Korean or roman letters — "홍길동" / "HongGildong"
+STUDENT_ID = "20233542"   # TODO: your student id, e.g. "20261234"
+STUDENT_NAME = "강지은"     # TODO: your name in Korean or roman letters — "홍길동" / "HongGildong"
 
 SEED = 42  # fixed for the whole course — DO NOT CHANGE
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "cafe_sales.csv"
@@ -34,62 +34,52 @@ def load_data(path: str | Path) -> pd.DataFrame:
 
 # ======================= TODO (Task 1): missing values =======================
 def summarize_missing(df: pd.DataFrame) -> pd.Series:
-    """Return the number of missing (NaN) values per column.
-
-    Returns:
-        pd.Series indexed by column name, integer counts, sorted in
-        DESCENDING order of count (ties: keep pandas' stable order).
-        Include only columns that have at least one missing value.
-    """
-    raise NotImplementedError
+    missing = df.isna().sum()
+    missing = missing[missing > 0]
+    missing = missing.sort_values(ascending=False, kind="stable")
+    return missing
 # ============================ END TODO (Task 1) ==============================
 
 
 # ======================== TODO (Task 2): cleaning ============================
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Return a cleaned COPY of df (do not mutate the input). Steps, in order:
-
-    1. Drop exact duplicate rows (keep the first occurrence), reset the index.
-    2. Convert `unit_price` to float. Some values are strings with a
-       thousands separator, e.g. "4,500" -> 4500.0.
-    3. Fill missing `quantity` with the MEDIAN of the non-missing quantities
-       (computed AFTER step 1), then cast `quantity` to int.
-    4. Recompute `total_price` = unit_price * quantity for rows where
-       `total_price` is missing; leave existing values untouched.
-    5. Fill missing `customer_rating` with the column MEAN (computed after
-       step 1) rounded to 2 decimals — i.e. the FILL VALUE is `round(mean, 2)`;
-       do not round the existing ratings or the whole column.
-
-    The returned frame must contain no missing values.
-    """
-    raise NotImplementedError
+    clean = df.copy(deep=True)
+    clean = clean.drop_duplicates(keep="first").reset_index(drop=True)
+    clean["unit_price"] = pd.to_numeric(clean["unit_price"].astype(str).str.replace(",", "", regex=False), errors="raise").astype(float)
+    quantity_median = clean["quantity"].median()
+    clean["quantity"] = pd.to_numeric(clean["quantity"].fillna(quantity_median).astype(int))
+    missing_total = clean["total_price"].isna()
+    clean.loc[missing_total, "total_price"] = clean.loc[missing_total, "unit_price"] * clean.loc[missing_total, "quantity"]
+    customer_rating_mean = round(clean["customer_rating"].mean(), 2)
+    clean["customer_rating"] = clean["customer_rating"].fillna(customer_rating_mean)
+    return clean
 # ============================ END TODO (Task 2) ==============================
 
 
 # ======================= TODO (Task 3): outliers (IQR) =======================
 def detect_outliers_iqr(df: pd.DataFrame, column: str, k: float = 1.5) -> list:
-    """Return the sorted list of index labels whose `column` value is an
-    outlier under the IQR rule:
+    col = df[column]
 
-        value < Q1 - k*IQR   or   value > Q3 + k*IQR,
-        where IQR = Q3 - Q1 (Q1/Q3 = 25th/75th percentiles, pandas default).
+    q1 = col.quantile(0.25)
+    q3 = col.quantile(0.75)
+    iqr = q3 - q1
 
-    NaN values are never outliers. Return a plain Python list of ints.
-    """
-    raise NotImplementedError
+    lower_bound = q1 - k * iqr
+    upper_bound = q3 + k * iqr
+
+    outlier_mask = (col < lower_bound) | (col > upper_bound)
+    outliers = sorted(int(idx) for idx in df[outlier_mask].index)
+    
+    return outliers
 # ============================ END TODO (Task 3) ==============================
 
 
 # ====================== TODO (Task 4): group statistics ======================
 def compute_group_stats(df: pd.DataFrame, group_col: str, value_col: str) -> pd.DataFrame:
-    """Group df by `group_col` and aggregate `value_col`.
-
-    Returns:
-        DataFrame indexed by the group keys with exactly three columns
-        ["count", "mean", "sum"] (count of non-missing values, mean rounded
-        to 2 decimals, sum), sorted by "sum" in DESCENDING order.
-    """
-    raise NotImplementedError
+    grouped = df.groupby(group_col)[value_col].agg(["count", "mean", "sum"])
+    grouped["mean"] = grouped["mean"].round(2)
+    grouped = grouped.sort_values(by="sum", ascending=False)
+    return grouped    
 # ============================ END TODO (Task 4) ==============================
 
 

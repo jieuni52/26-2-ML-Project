@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+*.pyc
+20233542_강지은_lab01.zip

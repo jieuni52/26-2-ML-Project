@@ -1,0 +1,17 @@
+{
+  "lab": "lab01",
+  "student_id": "20233542",
+  "name": "\uac15\uc9c0\uc740",
+  "seed": 42,
+  "metrics": {
+    "n_rows_raw": 412,
+    "n_rows_clean": 400,
+    "n_duplicates_removed": 12,
+    "missing_total_raw": 103,
+    "missing_total_clean": 0,
+    "n_outliers_quantity": 3,
+    "top_category_by_revenue": "coffee",
+    "mean_rating_clean": 4.037
+  },
+  "runtime_seconds": 0.02
+}
